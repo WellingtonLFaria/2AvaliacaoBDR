@@ -2,88 +2,89 @@
 
 -- Trigger ao responder chamado
 DELIMITER //
-
 CREATE TRIGGER ResponderChamado
 AFTER INSERT ON RespostaChamado
 FOR EACH ROW
 BEGIN
     UPDATE Chamado
-    SET status = 'Em andamento'
+    SET cham_status = 'Em andamento'
     WHERE cham_id = NEW.resp_cham_id;
 END //
-
 DELIMITER ;
 
 
--- Trigger ao deletar chamado
+-- Trigger ao atualizar uma resposta de chamado
 DELIMITER //
-
-CREATE TRIGGER DeletarChamado
-AFTER DELETE ON Chamado
+CREATE TRIGGER AtualizarResposta
+BEFORE UPDATE ON RespostaChamado
 FOR EACH ROW
 BEGIN
-    DELETE FROM RespostaChamado
-    WHERE resp_cham_id = OLD.cham_id;
+	SET NEW.resp_data = NOW();
 END //
-
 DELIMITER ;
 
 
--- Trigger ao deletar resposta de chamado
+-- Trigger ao inserir um chamado
 DELIMITER //
-
-CREATE TRIGGER DeletarRespostaChamado
-AFTER DELETE ON RespostaChamado
+CREATE TRIGGER SetChamadoDataInicio
+BEFORE INSERT ON Chamado
 FOR EACH ROW
 BEGIN
-    UPDATE Chamado
-    SET status = 'Aberto'
-    WHERE cham_id = OLD.resp_cham_id;
+    SET NEW.cham_data_inicio = CURDATE();
 END //
-
 DELIMITER ;
 
 
--- Trigger ao deletar cliente
+-- Trigger ao atualizar um chamado
 DELIMITER //
-
-CREATE TRIGGER DeletarCliente
-AFTER DELETE ON Cliente
+CREATE TRIGGER SetChamadoDataFim
+BEFORE UPDATE ON Chamado
 FOR EACH ROW
 BEGIN
-    DELETE FROM Chamado
-    WHERE cham_cli_id = OLD.cli_id;
-END //
-
-DELIMITER ;
-
-
--- Trigger ao deletar suporte
-DELIMITER //
-
-CREATE TRIGGER DeletarSuporte
-AFTER DELETE ON Suporte
-FOR EACH ROW
-BEGIN
-    DELETE FROM RespostaChamado
-    WHERE resp_sup_id = OLD.sup_id;
-END //
-
-DELIMITER ;
-
-
--- Trigger ao atualizar chamado
-DELIMITER //
-
-CREATE TRIGGER AtualizarChamado
-AFTER UPDATE ON Chamado
-FOR EACH ROW
-BEGIN
-    IF NEW.cham_prazo < CURDATE() THEN
-        UPDATE Chamado
-        SET cham_status = 'Atrasado'
-        WHERE cham_id = NEW.cham_id;
+    IF NEW.cham_status = 'Concluído' THEN
+        SET NEW.cham_data_fim = CURDATE();
     END IF;
 END //
-
 DELIMITER ;
+
+
+-- Trigger ao inserir uma resposta
+DELIMITER //
+CREATE TRIGGER SetChamadoPrazo
+BEFORE INSERT ON Chamado
+FOR EACH ROW
+BEGIN
+    SET NEW.cham_prazo = DATE_ADD(CURDATE(), INTERVAL 3 DAY);
+END //
+DELIMITER ;
+
+
+-- Trigger ao inserir um chamado
+DELIMITER //
+CREATE TRIGGER SetChamadoStatus
+BEFORE UPDATE ON Chamado
+FOR EACH ROW
+BEGIN
+    SET NEW.cham_status = 'Aberto';
+END //
+DELIMITER ;
+
+-- Resultado ResponderChamado
+INSERT INTO RespostaChamado(resp_soluc_comum, resp_sup_id, resp_cham_id) VALUES ("Teste", 5, 4);
+SELECT * FROM Chamado;
+
+-- Resultado AtualizarResposta
+UPDATE RespostaChamado SET resp_soluc_comum = "Teste" WHERE resp_id = 2;
+SELECT * FROM RespostaChamado WHERE resp_id = 2;
+
+-- Resultado SetChamadoDataInicio
+INSERT INTO Chamado(cham_titulo, cham_descricao, cham_urgencia, cham_cli_cpf) VALUES ("Problemas na máquina", "Problema com o S.O.", "baixa", 12345678901);
+SELECT * FROM Chamado;
+
+-- Resultado SetChamadoDataFim
+UPDATE Chamado SET cham_status = "Concluído" WHERE cham_id = 5;
+SELECT * FROM Chamado;
+
+-- Resultado SetRespostaData
+INSERT INTO RespostaChamado(resp_soluc_comum, resp_sup_id, resp_cham_id) VALUES ("Teste", 5, 5);
+SELECT * FROM RespostaChamado;

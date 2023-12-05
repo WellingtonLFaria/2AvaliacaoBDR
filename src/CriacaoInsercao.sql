@@ -23,6 +23,7 @@ CREATE TABLE Chamado (
     cham_data_inicio DATE,
     cham_urgencia ENUM('baixa', 'media', 'alta', 'urgente') NOT NULL DEFAULT 'media',
     cham_prazo DATE,
+    cham_data_fim DATE,
     cham_cli_cpf VARCHAR(11),
     FOREIGN KEY (cham_cli_cpf) REFERENCES Cliente(cli_cpf)
 );
